@@ -1,0 +1,40 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Caches & tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Virtual environments
+.venv
+
+# Environment/config secrets
+.env
+configs/.env
+configs/.env.*
+
+# Logs & runtime artifacts
+logs/
+*.log
+*.ndjson
+stop.txt
+
+# Training artifacts
+outputs/
+data/
+spiremind_lora_model/
+unsloth_compiled_cache/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.python-version

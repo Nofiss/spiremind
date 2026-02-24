@@ -1,0 +1,24 @@
+{
+  "train": [
+    {
+      "file_name": "data/llm/train.jsonl",
+      "formatting": "sharegpt",
+      "columns": {
+        "messages": "messages",
+        "role": "role",
+        "content": "content"
+      }
+    }
+  ],
+  "validation": [
+    {
+      "file_name": "data/llm/val.jsonl",
+      "formatting": "sharegpt",
+      "columns": {
+        "messages": "messages",
+        "role": "role",
+        "content": "content"
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "IRONCLAD": {
+    "Strike": 0.2,
+    "Defend": 0.3,
+    "Bash": 0.6,
+    "Heavy Blade": 0.8,
+    "Demon Form": 0.9,
+    "Shrug It Off": 0.75,
+    "Whirlwind": 0.7
+  },
+  "SILENT": {
+    "Neutralize": 0.6,
+    "Survivor": 0.6,
+    "Poisoned Stab": 0.55,
+    "Catalyst": 0.85,
+    "Backflip": 0.7
+  }
+}

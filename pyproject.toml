@@ -1,0 +1,42 @@
+[project]
+name = "spiremind"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "customtkinter>=5.2.2",
+    "loguru>=0.7.3",
+    "ollama>=0.6.1",
+    "pydantic>=2.12.5",
+    "pyodbc>=5.3.0",
+    "pytest>=9.0.2",
+    "numpy>=2.0.0",
+]
+
+[project.optional-dependencies]
+llm = [
+    "unsloth",
+    "torch>=2.5.1",      # Versione corretta
+    "transformers>=4.48.0",
+    "datasets>=3.0.0",
+    "accelerate>=1.1.0",
+    "bitsandbytes>=0.45.0",
+    "torchvision>=0.20.1",
+    "torchaudio>=2.5.1",
+    "hf-xet>=1.2.0",
+]
+rl = [
+    "gymnasium>=0.29.1",
+    "stable-baselines3>=2.3.2",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cuda"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cuda" }
+torchvision = { index = "pytorch-cuda" }
+torchaudio = { index = "pytorch-cuda" }
