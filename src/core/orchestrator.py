@@ -12,6 +12,9 @@ from config import BotConfig
 from loguru import logger
 from core.session import SessionManager
 from utils.training_logger import TrainingLogger
+from utils.reward_tracker import RewardTracker
+from utils.reward_logger import RewardLogger
+from utils.rl_online_trainer import RlOnlineTrainer
 from utils.rag import GameRAG
 from utils.command_policy import normalize_and_validate_command
 
@@ -22,7 +25,7 @@ class SpireOrchestrator:
         if BotConfig.USE_LORA_AGENT:
             try:
                 self.agent = LoraAgent(
-                    model_path=BotConfig.LORA_MODEL_PATH,
+                    model_path=str(BotConfig.LORA_MODEL_PATH or "spiremind_lora_model"),
                     max_new_tokens=BotConfig.LORA_MAX_NEW_TOKENS,
                     max_seq_length=BotConfig.LORA_MAX_SEQ_LENGTH,
                 )
@@ -32,8 +35,17 @@ class SpireOrchestrator:
         else:
             self.agent = OllamaAgent()
         self.rl_agent = None
+        self.rl_trainer = None
+        self.reward_tracker = RewardTracker()
+        self.reward_logger = RewardLogger()
+        self._pending_rl_cmd = None
+        self._pending_rl_action_id = None
+        self._pending_rl_obs = None
         if BotConfig.USE_RL_AGENT:
-            self.rl_agent = RlAgent(BotConfig.RL_MODEL_PATH)
+            model_path = str(BotConfig.RL_MODEL_PATH or "data/rl_models/spire_ppo.zip")
+            self.rl_agent = RlAgent(model_path)
+            if self.rl_agent and self.rl_agent.model:
+                self.rl_trainer = RlOnlineTrainer(self.rl_agent.model)
         self.command_queue = queue.Queue()
         self.is_thinking = False
         self.session = SessionManager()
@@ -250,7 +262,15 @@ class SpireOrchestrator:
             logger.debug("AI Thread: Inizio analisi...")
             action = None
             if self.rl_agent:
-                action = self.rl_agent.think(state)
+                action, action_id, obs = self.rl_agent.think(state)
+                if action:
+                    self._pending_rl_cmd = action
+                    self._pending_rl_action_id = action_id
+                    self._pending_rl_obs = obs
+                else:
+                    self._pending_rl_cmd = None
+                    self._pending_rl_action_id = None
+                    self._pending_rl_obs = None
             if not action:
                 action = self.agent.think(state)
             self.command_queue.put(action)
@@ -339,7 +359,22 @@ class SpireOrchestrator:
                 f"CMD_INVALID: '{cmd}'. Disponibili: {state.available_commands}"
             )
             self._metrics["fallbacks"] += 1
+            if cmd == self._pending_rl_cmd:
+                self._pending_rl_cmd = None
+                self._pending_rl_action_id = None
+                self._pending_rl_obs = None
             return
+
+        if (
+            cmd == self._pending_rl_cmd
+            and self.rl_trainer
+            and self._pending_rl_obs is not None
+            and self._pending_rl_action_id is not None
+        ):
+            self.rl_trainer.record(self._pending_rl_obs, self._pending_rl_action_id)
+            self._pending_rl_cmd = None
+            self._pending_rl_action_id = None
+            self._pending_rl_obs = None
 
         # Invio sicuro
         logger.info(f"CMD_SENT: {normalized}")
@@ -556,6 +591,37 @@ class SpireOrchestrator:
                             )
                     except Exception:
                         pass
+
+                    # Reward tracking + RL online update
+                    try:
+                        event = self.reward_tracker.update(prev_state, state)
+                        if event and self.rl_trainer:
+                            self.rl_trainer.apply_reward(
+                                reward=event.reward,
+                                done=event.done,
+                                reason=event.reason,
+                            )
+                        if event:
+                            self.reward_logger.log(
+                                {
+                                    "reward": event.reward,
+                                    "done": event.done,
+                                    "reason": event.reason,
+                                    "act": int(getattr(state, "act", 0) or 0),
+                                    "floor": int(getattr(state, "floor", 0) or 0),
+                                    "screen_type": str(
+                                        getattr(state, "screen_type", "UNKNOWN")
+                                    ),
+                                    "room_phase": str(
+                                        getattr(state, "room_phase", "UNKNOWN")
+                                    ),
+                                    "hp": int(getattr(state, "hp", 0) or 0),
+                                    "max_hp": int(getattr(state, "max_hp", 0) or 0),
+                                    "victory": getattr(state, "victory", None),
+                                }
+                            )
+                    except Exception as e:
+                        logger.debug(f"Reward tracking error: {e}")
 
                     # Detect newly added card(s) to the deck and ingest into DB
                     try:

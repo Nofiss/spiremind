@@ -22,6 +22,17 @@ class BotConfig:
     USE_RL_AGENT = get_bool("USE_RL_AGENT", False)
     RL_MODEL_PATH = "data/rl_models/spire_ppo.zip"
 
+    # --- REWARD SETTINGS (RL) ---
+    REWARD_FIGHT_WIN_BASE = get_float("REWARD_FIGHT_WIN_BASE", 1.0)
+    REWARD_FIGHT_HP_LOSS_SCALE = get_float("REWARD_FIGHT_HP_LOSS_SCALE", 1.0)
+    REWARD_FIGHT_MIN = get_float("REWARD_FIGHT_MIN", -1.0)
+    REWARD_FIGHT_MAX = get_float("REWARD_FIGHT_MAX", 1.0)
+    REWARD_ACT1 = get_float("REWARD_ACT1", 10.0)
+    REWARD_ACT2 = get_float("REWARD_ACT2", 20.0)
+    REWARD_ACT3 = get_float("REWARD_ACT3", 40.0)
+    REWARD_RUN_WIN = get_float("REWARD_RUN_WIN", 100.0)
+    REWARD_RUN_LOSS = get_float("REWARD_RUN_LOSS", -100.0)
+
     # --- LORA SETTINGS ---
     USE_LORA_AGENT = get_bool("USE_LORA_AGENT", False)
     LORA_MODEL_PATH = get("LORA_MODEL_PATH", "spiremind_lora_model")

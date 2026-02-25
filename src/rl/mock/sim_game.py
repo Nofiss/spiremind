@@ -51,6 +51,8 @@ class SimGame:
         self.monsters = self._spawn_monsters()
         self.hand = self._draw_hand()
         self.in_game = True
+        self._combat_start_hp = self.player_hp
+        self._combat_start_max_hp = self.player_max_hp
 
     def reset(self) -> SimState:
         self.turn = 1
@@ -61,6 +63,8 @@ class SimGame:
         self.monsters = self._spawn_monsters()
         self.hand = self._draw_hand()
         self.in_game = True
+        self._combat_start_hp = self.player_hp
+        self._combat_start_max_hp = self.player_max_hp
         return self._build_state()
 
     def _spawn_monsters(self) -> List[SimMonster]:
@@ -135,7 +139,13 @@ class SimGame:
         terminated = self.player_hp <= 0 or self._all_monsters_dead()
         if terminated:
             self.in_game = False
-            reward += 10.0 if self.player_hp > 0 else -10.0
+            if self.player_hp > 0:
+                reward += 100.0
+                hp_loss = max(0, self._combat_start_hp - self.player_hp)
+                if self._combat_start_max_hp > 0:
+                    reward += 1.0 - (float(hp_loss) / float(self._combat_start_max_hp))
+            else:
+                reward -= 100.0
         return self._build_state(), reward, terminated, False
 
     def _handle_play(self, parts: List[str]) -> float:
@@ -170,11 +180,11 @@ class SimGame:
             if m.current_hp == 0:
                 m.is_gone = True
             self.energy -= card.cost
-            return float(dmg) / 10.0
+            return 0.0
 
         self.player_block += card.block
         self.energy -= card.cost
-        return float(card.block) / 20.0
+        return 0.0
 
     def _handle_end_turn(self) -> float:
         incoming = sum(
@@ -187,7 +197,7 @@ class SimGame:
         self.turn += 1
         self.energy = 3
         self.hand = self._draw_hand()
-        return float(mitigated) / 10.0 - float(dmg) / 20.0
+        return 0.0
 
     def _all_monsters_dead(self) -> bool:
         return all(m.is_gone or m.current_hp <= 0 for m in self.monsters)

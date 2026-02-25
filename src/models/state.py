@@ -69,6 +69,13 @@ class GameState(BaseModel):
     energy: int = 0
     hp: int = Field(default=0, alias="current_hp")
     max_hp: int = 0
+    act: int = 0
+    floor: int = 0
+    ascension_level: int = 0
+    act_boss: str = "UNKNOWN"
+    screen_name: str = "UNKNOWN"
+    victory: Optional[bool] = None
+    score: int = 0
     # Block corrente del player (se disponibile)
     player_block: int = 0
     # Elenco pozioni (se disponibile). Struttura libera: dict/name string.
@@ -144,6 +151,29 @@ class GameState(BaseModel):
                 "parse_fallback_screen_type"
             ):
                 logger.debug("PARSE_FALLBACK: screen_type=UNKNOWN")
+        except Exception:
+            pass
+
+        # 2d. Screen name, victory, score (if present)
+        try:
+            merged["screen_name"] = str(
+                game_data.get("screen_name", merged.get("screen_name", "UNKNOWN"))
+                or "UNKNOWN"
+            ).upper()
+        except Exception:
+            pass
+        try:
+            screen_state = (
+                game_data.get("screen_state") or raw.get("screen_state") or {}
+            )
+            if isinstance(screen_state, dict):
+                if "victory" in screen_state:
+                    merged["victory"] = bool(screen_state.get("victory"))
+                if "score" in screen_state:
+                    try:
+                        merged["score"] = int(screen_state.get("score") or 0)
+                    except Exception:
+                        pass
         except Exception:
             pass
         try:
@@ -284,6 +314,37 @@ class GameState(BaseModel):
         try:
             merged["gold"] = int(
                 player_data.get("gold", merged.get("gold", raw.get("gold", 0))) or 0
+            )
+        except Exception:
+            pass
+
+        # Act/floor/ascension/boss
+        try:
+            merged["act"] = int(
+                game_data.get("act", merged.get("act", raw.get("act", 0))) or 0
+            )
+        except Exception:
+            pass
+        try:
+            merged["floor"] = int(
+                game_data.get("floor", merged.get("floor", raw.get("floor", 0))) or 0
+            )
+        except Exception:
+            pass
+        try:
+            merged["ascension_level"] = int(
+                game_data.get(
+                    "ascension_level",
+                    merged.get("ascension_level", raw.get("ascension_level", 0)),
+                )
+                or 0
+            )
+        except Exception:
+            pass
+        try:
+            merged["act_boss"] = str(
+                game_data.get("act_boss", merged.get("act_boss", "UNKNOWN"))
+                or "UNKNOWN"
             )
         except Exception:
             pass
