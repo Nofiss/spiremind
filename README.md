@@ -119,6 +119,7 @@ pytest -q
 - Lenient mode (keeps simple commands even when validation falls back):
   `PYTHONPATH=src python scripts/prepare_llm_dataset.py --lenient`
 - Training guide: `docs/LLM_TRAINING.md`
+- Model and training overview: `docs/models-and-training.md`
 - Use LoRA agent: set `USE_LORA_AGENT=1` and `LORA_MODEL_PATH=spiremind_lora_model` in `configs/.env`
 - Unsloth scripts: `scripts/llm/train_spire.py`, `scripts/llm/test_inference.py`, `scripts/llm/test_gpu.py`
 

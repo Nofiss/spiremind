@@ -1,4 +1,4 @@
-from utils.config_loader import get_int, get_float, get_bool
+from utils.config_loader import get, get_int, get_float, get_bool
 
 
 class BotConfig:

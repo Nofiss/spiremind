@@ -2,6 +2,7 @@ import os
 import sys
 from loguru import logger
 
+
 class SpireLogger:
     def __init__(self, log_name: str = "spire_mind.log"):
         # 1. Troviamo la root del progetto in modo robusto
@@ -29,18 +30,20 @@ class SpireLogger:
         # Aggiungiamo il sink per il file
         logger.add(
             self.log_path,
-            rotation="10 MB",
+            rotation="00:00",
             retention="5 days",
             level="DEBUG",
             # Formato pulito per debugging senior
             format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {thread.name} | {module}:{function}:{line} - {message}",
             encoding="utf-8",
-            enqueue=True, # Thread-safe
-            compression="zip" # Comprime i vecchi log per risparmiare spazio
+            enqueue=True,  # Thread-safe
+            compression="zip",  # Comprime i vecchi log per risparmiare spazio
         )
 
         # Logging iniziale per conferma nel file
-        logger.info(f"Logger inizializzato. Root progetto rilevata: {os.path.dirname(os.path.dirname(self.log_path))}")
+        logger.info(
+            f"Logger inizializzato. Root progetto rilevata: {os.path.dirname(os.path.dirname(self.log_path))}"
+        )
 
     def get_logger(self):
         return logger
