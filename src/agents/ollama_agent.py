@@ -1,4 +1,3 @@
-import ollama
 import re
 from models.state import GameState
 from loguru import logger
@@ -6,6 +5,26 @@ from utils.rag import GameRAG
 from agents.heuristics import heuristic_action
 from utils.prompt import build_combat_prompt
 from utils.command_policy import normalize_and_validate_command
+
+
+_OLLAMA_UNAVAILABLE_LOGGED = False
+_OLLAMA_DISABLED = False
+_OLLAMA_DISABLED_LOGGED = False
+
+
+def _get_ollama_client():
+    global _OLLAMA_UNAVAILABLE_LOGGED, _OLLAMA_DISABLED
+    if _OLLAMA_DISABLED:
+        return None
+    try:
+        import ollama
+
+        return ollama
+    except Exception as exc:
+        if not _OLLAMA_UNAVAILABLE_LOGGED:
+            logger.warning(f"Ollama not available; disabling LLM calls: {exc}")
+            _OLLAMA_UNAVAILABLE_LOGGED = True
+        return None
 
 
 class OllamaAgent:
@@ -119,7 +138,10 @@ class OllamaAgent:
         if rag_notes:
             prompt = prompt + "\nRAG NOTES:\n" + "\n".join(rag_notes)
         try:
-            res = ollama.chat(
+            client = _get_ollama_client()
+            if not client:
+                return "end"
+            res = client.chat(
                 model=self.model,
                 messages=[
                     {
@@ -141,5 +163,17 @@ class OllamaAgent:
             return final_action
 
         except Exception as e:
-            logger.error(f"Errore Ollama: {e}")
+            global _OLLAMA_DISABLED, _OLLAMA_DISABLED_LOGGED
+            msg = str(e).lower()
+            if (
+                "failed to connect" in msg
+                or "connection refused" in msg
+                or "connection error" in msg
+            ):
+                _OLLAMA_DISABLED = True
+                if not _OLLAMA_DISABLED_LOGGED:
+                    logger.warning(f"Ollama unreachable; disabling LLM calls: {e}")
+                    _OLLAMA_DISABLED_LOGGED = True
+            else:
+                logger.error(f"Errore Ollama: {e}")
             return "end"

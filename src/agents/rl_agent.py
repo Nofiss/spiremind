@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional, Tuple
+import os
 
 import numpy as np
 from loguru import logger
@@ -17,12 +18,29 @@ class RlAgent:
         self.last_obs: Optional[dict] = None
         self._load_model()
 
+    def _resolve_model_path(self) -> str:
+        path = self.model_path or ""
+        candidates = [path]
+        if path.endswith(".zip.zip"):
+            candidates.append(path[: -len(".zip")])
+        elif path and not path.endswith(".zip"):
+            candidates.append(path + ".zip")
+
+        for cand in candidates:
+            if cand and os.path.exists(cand):
+                if cand != path:
+                    logger.warning(f"RL model path corrected: {path} -> {cand}")
+                return cand
+        return path
+
     def _load_model(self) -> None:
         try:
             from stable_baselines3 import PPO
 
-            self.model = PPO.load(self.model_path)
-            logger.info(f"RL model loaded: {self.model_path}")
+            resolved = self._resolve_model_path()
+            self.model = PPO.load(resolved)
+            self.model_path = resolved
+            logger.info(f"RL model loaded: {resolved}")
         except Exception as exc:
             self.model = None
             logger.error(f"RL model load failed: {exc}")

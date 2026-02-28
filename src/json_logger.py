@@ -14,12 +14,28 @@ def main() -> int:
 
     bridge = SpireBridge()
 
+    last_line: str | None = None
+
+    try:
+        sys.stdout.write("ping\n")
+        sys.stdout.flush()
+    except Exception as exc:
+        log.error(f"Errore invio ping iniziale: {exc}")
+        return 1
+
     try:
         while True:
             raw_line = bridge.read_line_nowait()
             if raw_line is not None:
-                sys.stdout.write(f"{raw_line}\n")
-                sys.stdout.flush()
+                log.debug(f"RX: {raw_line}")
+                if raw_line != last_line:
+                    try:
+                        sys.stdout.write("ping\n")
+                        sys.stdout.flush()
+                    except Exception as exc:
+                        log.error(f"Errore invio ping: {exc}")
+                        return 1
+                    last_line = raw_line
             else:
                 time.sleep(0.01)
     except KeyboardInterrupt:

@@ -16,6 +16,7 @@ class GameRAG:
 
     def __init__(self):
         self.conn = None
+        self._ollama_disabled = False
         # Prefer .env config over OS environment
         try:
             from utils.config_loader import get as cfg_get
@@ -69,7 +70,7 @@ class GameRAG:
         return bool(self.conn and self.pyodbc)
 
     def _embed(self, text: str) -> Optional[List[float]]:
-        if not self.ollama:
+        if not self.ollama or self._ollama_disabled:
             return None
         try:
             res = self.ollama.embed(model=self.embed_model, input=text)
@@ -77,7 +78,9 @@ class GameRAG:
             vec = res.get("embedding") or (res.get("embeddings") or [[]])[0]
             return list(vec)
         except Exception as e:
-            logger.debug(f"RelicRAG: embedding error: {e}")
+            if not self._ollama_disabled:
+                logger.warning(f"RelicRAG: Ollama embedding disabled after error: {e}")
+                self._ollama_disabled = True
             return None
 
     def _pack_vector(self, vec: List[float]) -> bytes:
